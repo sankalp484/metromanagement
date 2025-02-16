@@ -92,7 +92,6 @@ CREATE TABLE passenger (
     passenger_id INT PRIMARY KEY AUTO_INCREMENT,  -- Unique ID for each passenger
     user_id VARCHAR(20) NOT NULL,  -- Links to the user who bought the ticket
     pnr VARCHAR(10) NOT NULL,  -- Links to the ticket purchased
-    travel_date DATE NOT NULL,  -- Date of travel
     FOREIGN KEY (user_id) REFERENCES user(user_id),
     FOREIGN KEY (pnr) REFERENCES ticket(pnr)
 );
