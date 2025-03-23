@@ -8,6 +8,7 @@ CREATE TABLE station (
                          st_code VARCHAR(10),
                          st_name VARCHAR(50) NOT NULL,
                          line_color ENUM('Blue', 'Pink', 'Red') NOT NULL,
+
                          PRIMARY KEY (st_code, line_color) -- Allows a station to be on multiple lines
 );
 
@@ -19,16 +20,8 @@ CREATE TABLE metro_route (
                              stations TEXT NOT NULL
 );
 
--- Metro Stops Table
-CREATE TABLE metro_stop (
-                            route_id VARCHAR(10) NOT NULL,
-                            st_code VARCHAR(10) NOT NULL,
-                            stop_order INT NOT NULL,
-                            platform INT NOT NULL,
-                            PRIMARY KEY (route_id, st_code, platform),
-                            FOREIGN KEY (route_id) REFERENCES metro_route(route_id),
-                            FOREIGN KEY (st_code) REFERENCES station(st_code)
-);
+
+
 
 -- Metro Trains Table
 CREATE TABLE metro (
@@ -43,8 +36,9 @@ CREATE TABLE ticket (
                         username VARCHAR(50) NOT NULL,
                         entry_station VARCHAR(10) NOT NULL,
                         exit_station VARCHAR(10) NOT NULL,
-                        fare INT DEFAULT 0 NOT NULL,
+                        fare INT DEFAULT 0 NOT NULL,  -- Fare will be updated via trigger
                         booking_details VARCHAR(255),
+                        booking_date DATE NOT NULL,  -- Added booking_date for ticket history queries
                         FOREIGN KEY (entry_station) REFERENCES station(st_code),
                         FOREIGN KEY (exit_station) REFERENCES station(st_code)
 );
@@ -52,15 +46,18 @@ CREATE TABLE ticket (
 -- Metro Schedule Table
 CREATE TABLE metro_schedule (
                                 schedule_id INT PRIMARY KEY AUTO_INCREMENT,
+                                metro_id VARCHAR(10) NOT NULL,  -- Now tracks specific metros instead of just routes
                                 route_id VARCHAR(10) NOT NULL,
                                 st_code VARCHAR(10) NOT NULL,
                                 arrival_time TIME NOT NULL,
                                 departure_time TIME NOT NULL,
                                 platform INT NOT NULL,
-                                UNIQUE (st_code, platform, arrival_time),
+                                direction ENUM('Forward', 'Reverse') NOT NULL,  -- Indicates metro direction
+                                UNIQUE (metro_id, st_code, arrival_time),  -- Ensures a metro doesn't duplicate timing at the same station
                                 FOREIGN KEY (route_id) REFERENCES metro_route(route_id),
                                 FOREIGN KEY (st_code) REFERENCES station(st_code)
 );
+
 
 -- Time Table for Each Station
 CREATE TABLE time_table (
@@ -80,24 +77,20 @@ CREATE TABLE admin (
                        CHECK (LENGTH(passcode) > 5)
 );
 
--- User Table
+-- Create User Table
 CREATE TABLE user (
                       user_id VARCHAR(20) PRIMARY KEY,
                       full_name VARCHAR(50) NOT NULL,
                       email VARCHAR(100) UNIQUE NOT NULL,
                       phone VARCHAR(15) UNIQUE NOT NULL
 );
-
--- Passenger Table
 CREATE TABLE passenger (
-                           passenger_id INT PRIMARY KEY AUTO_INCREMENT,
-                           user_id VARCHAR(20) NOT NULL,
-                           pnr VARCHAR(10) NOT NULL,
+                           passenger_id INT PRIMARY KEY AUTO_INCREMENT,  -- Unique ID for each passenger
+                           user_id VARCHAR(20) NOT NULL,  -- Links to the user who bought the ticket
+                           pnr VARCHAR(10) NOT NULL,  -- Links to the ticket purchased
                            FOREIGN KEY (user_id) REFERENCES user(user_id),
                            FOREIGN KEY (pnr) REFERENCES ticket(pnr)
 );
-
--- Station Transfer Table
 CREATE TABLE station_transfer (
                                   st_code VARCHAR(10),
                                   from_line ENUM('Blue', 'Pink', 'Red'),
@@ -106,10 +99,29 @@ CREATE TABLE station_transfer (
                                   FOREIGN KEY (st_code) REFERENCES station(st_code)
 );
 
--- Credentials Table
+
+-- Create Credentials Table
 CREATE TABLE credentials (
                              user_id VARCHAR(20) PRIMARY KEY,
                              passcode VARCHAR(30) NOT NULL,
                              FOREIGN KEY (user_id) REFERENCES user(user_id),
                              CHECK (LENGTH(passcode) > 5)
+);
+CREATE TABLE fare (
+                      source VARCHAR(10),
+                      destination VARCHAR(10),
+                      distance INT,
+                      base_fare INT,  -- Example: ₹10 per km
+                      total_fare INT, -- Precomputed fare (distance * base_fare)
+                      PRIMARY KEY (source, destination),
+                      FOREIGN KEY (source) REFERENCES station(st_code),
+                      FOREIGN KEY (destination) REFERENCES station(st_code)
+);
+CREATE TABLE metro_stop (
+                            metro_id VARCHAR(6),
+                            st_code VARCHAR(10),
+                            line_color ENUM('Blue', 'Pink', 'Red') NOT NULL,
+                            PRIMARY KEY (metro_id, st_code, line_color),
+                            FOREIGN KEY (metro_id) REFERENCES metro(metro_id),
+                            FOREIGN KEY (st_code, line_color) REFERENCES station(st_code, line_color)
 );
