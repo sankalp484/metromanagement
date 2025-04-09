@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Train Schedule</title>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpg.png') }}");
+            background-size: cover;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            padding: 20px;
+        }
+        .schedule-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 1000px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: center;
+            border-bottom: 1px solid #aaa;
+        }
+        th {
+            background-color: #333;
+            color: white;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .filter-form {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-form input,
+        .filter-form select,
+        .filter-form button {
+            padding: 8px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .filter-form button {
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+        .filter-form button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="schedule-container">
+    <h2>Metro Train Schedule</h2>
+
+    <!-- Search/Filter Form -->
+    <form method="get" style="margin-bottom: 20px;">
+        <input type="text" name="metro_id" placeholder="Metro ID" value="{{ request.args.get('metro_id', '') }}">
+        <input type="text" name="station" placeholder="Station" value="{{ request.args.get('station', '') }}">
+        <select name="direction">
+            <option value="">All Directions</option>
+            <option value="Forward" {% if request.args.get('direction') == 'Forward' %}selected{% endif %}>Forward</option>
+            <option value="Reverse" {% if request.args.get('direction') == 'Reverse' %}selected{% endif %}>Reverse</option>
+        </select>
+        <input type="time" name="arrival_time" value="{{ request.args.get('arrival_time', '') }}">
+        <button type="submit">Search Next 10-Minute Metro</button>
+    </form>
+
+    <!-- Schedule Table -->
+    <table>
+        <tr>
+            <th>Metro ID</th>
+            <th>Route ID</th>
+            <th>Station</th>
+            <th>Arrival Time</th>
+            <th>Departure Time</th>
+            <th>Platform</th>
+            <th>Direction</th>
+        </tr>
+        {% for row in schedule %}
+        <tr>
+            <td>{{ row.metro_id }}</td>
+            <td>{{ row.route_id }}</td>
+            <td>{{ row.station_name }}</td>
+            <td>{{ row.arrival_time }}</td>
+            <td>{{ row.departure_time }}</td>
+            <td>{{ row.platform }}</td>
+            <td>{{ row.direction }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>

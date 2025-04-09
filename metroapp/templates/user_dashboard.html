@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-image: url("{{ url_for('static', filename='background.jpg.png') }}");
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      color: white;
+    }
+
+    .welcome {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: black;
+      font-size: 28px;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+
+    .dashboard-options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 20px;
+    }
+
+    .btn {
+      display: block;
+      text-align: center;
+      padding: 20px 40px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      text-decoration: none;
+      font-size: 20px;
+      border-radius: 10px;
+      width: 300px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.9);
+    }
+  </style>
+</head>
+<body>
+
+<div class="welcome">Welcome, {{ user_id }}</div>
+
+<div class="dashboard-options">
+  <a href="{{ url_for('view_schedule') }}" class="btn">View Train Schedule</a>
+  <a href="{{ url_for('view_timings') }}" class="btn">Check Train Timings</a>
+  <a href="{{ url_for('book_train', user_id=user_id) }}" class="btn">Book a Train</a>
+</div>
+
+</body>
+</html>
