@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>View Metro Routes</title>
+  <style>
+    body {
+      background-image: url("{{ url_for('static', filename='background.jpg.png') }}");
+      background-size: cover;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      padding: 20px;
+    }
+    .route-container {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    form input,
+    form button {
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 120px;
+    }
+    form button {
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+    }
+    form button:hover {
+      background-color: #555;
+    }
+    .result-box {
+      text-align: center;
+      font-size: 16px;
+      padding: 15px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .route-path-box {
+      text-align: center;
+      background-color: #e9f5ff;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #003366;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+    }
+    .route-path-box span {
+      font-weight: bold;
+      color: #00509e;
+    }
+  </style>
+</head>
+<body>
+<div class="route-container">
+  <h2>Find Your Metro Route</h2>
+  <form method="get">
+    <input type="text" name="source" placeholder="Enter Station Name" value="{{ request.args.get('source', '') }}" required>
+    <input type="text" name="destination" placeholder="Exit Station Name" value="{{ request.args.get('destination', '') }}" required>
+    <button type="submit">Find Route</button>
+  </form>
+
+  {% if route_info %}
+  <div class="result-box">
+    <strong>{{ route_info }}</strong>
+  </div>
+  {% elif error_message %}
+  <div class="result-box" style="color: red;">
+    {{ error_message }}
+  </div>
+  {% endif %}
+
+  {% if full_path %}
+  <div class="route-path-box">
+    <span>Route:</span><br>
+    {% for station in full_path %}
+    {{ station }}{% if not loop.last %} &rarr; {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

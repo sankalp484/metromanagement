@@ -28,6 +28,28 @@
       border-radius: 8px;
     }
 
+    .logout-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s ease;
+      z-index: 10;
+    }
+
+    .logout-button img {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    .logout-button:hover {
+      background-color: rgba(255, 255, 255, 1);
+    }
+
     .dashboard-options {
       display: flex;
       flex-direction: column;
@@ -59,10 +81,18 @@
 
 <div class="welcome">Welcome, {{ user_id }}</div>
 
+<a href="{{ url_for('logout') }}" class="logout-button" title="Logout">
+  <img src="{{ url_for('static', filename='logout.jpg') }}" alt="Logout">
+</a>
+
 <div class="dashboard-options">
   <a href="{{ url_for('view_schedule') }}" class="btn">View Train Schedule</a>
-  <a href="{{ url_for('view_timings') }}" class="btn">Check Train Timings</a>
-  <a href="{{ url_for('book_train', user_id=user_id) }}" class="btn">Book a Train</a>
+  <a href="{{ url_for('view_routes') }}" class="btn">Check Train Routes</a>
+  <a href="{{ url_for('book_ticket', user_id=user_id) }}" class="btn">Book a Train</a>
+  <a href="{{ url_for('view_history', user_id=user_id) }}" class="btn">View Booking History</a>
+
+
+
 </div>
 
 </body>

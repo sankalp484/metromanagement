@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Book Metro Ticket</title>
+  <style>
+    body {
+      background-image: url("{{ url_for('static', filename='background.jpg.png') }}");
+      background-size: cover;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      padding: 20px;
+    }
+    .route-container {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    form input,
+    form button {
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 120px;
+    }
+    form button {
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+    }
+    form button:hover {
+      background-color: #555;
+    }
+    .result-box {
+      text-align: center;
+      font-size: 16px;
+      padding: 15px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+    }
+    img.qr-code {
+      display: block;
+      margin: 20px auto;
+      max-width: 200px;
+    }
+    .back-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .back-btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+<div class="route-container">
+  <h2>Book Your Metro Ticket</h2>
+
+  {% if message %}
+  <div class="result-box" style="color: green;">
+    {{ message }}
+  </div>
+  {% endif %}
+
+  {% if qr_code_img %}
+  <div class="result-box">
+    <p>Your ticket QR code:</p>
+    <img class="qr-code" src="data:image/png;base64,{{ qr_code_img }}" alt="QR Code">
+    <a href="{{ url_for('user_dashboard', user_id=user_id) }}">
+      <button class="back-btn">Back to Dashboard</button>
+    </a>
+  </div>
+  {% elif not fare %}
+  <form method="post">
+    <input type="hidden" name="stage" value="fare_check">
+    <input type="text" name="entry_station" placeholder="Enter Entry Station Code" required>
+    <input type="text" name="exit_station" placeholder="Enter Exit Station Code" required>
+    <button type="submit">Check Fare</button>
+  </form>
+  {% elif fare and stage == 'confirm' %}
+  <form method="post">
+    <input type="hidden" name="stage" value="confirm_payment">
+    <input type="hidden" name="entry_station" value="{{ entry }}">
+    <input type="hidden" name="exit_station" value="{{ exit }}">
+    <input type="hidden" name="fare" value="{{ fare }}">
+    <input type="text" value="Fare for this trip: ₹{{ fare }}" readonly>
+    <input type="number" name="paid_amount" placeholder="Enter ₹{{ fare }} to confirm" required>
+    <button type="submit">Confirm & Pay</button>
+  </form>
+  {% endif %}
+</div>
+</body>
+</html>
