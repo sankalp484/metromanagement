@@ -8,7 +8,7 @@ from io import BytesIO
 from datetime import date
 import mysql.connector
 from collections import deque
-
+import json
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Needed for flashing messages
@@ -370,21 +370,32 @@ def book_ticket():
                 cursor.close()
                 conn.close()
                 return "User not logged in", 403
-
+            full_name = get_username(username)
             pnr = generate_pnr()
             today = date.today()
-            details = f"{username}|From:{entry_code}|To:{exit_code}|Fare:₹{fare}"
+            details = json.dumps({
+                "username": username,
+                "from": entry_code,
+                "to": exit_code,
+                "fare": fare
+            })
 
             img = qrcode.make(details)
             buffer = BytesIO()
             img.save(buffer)
             qr_code_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
-
+            user_id = session.get('user_id')
             try:
                 cursor.execute("""
                     INSERT INTO ticket (pnr, username, entry_station, exit_station, fare, booking_details, booking_date)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (pnr, username, entry_code, exit_code, 0, details, today))
+                    VALUES (%s, %s, %s, %s, %s,%s, %s)
+                """, (pnr, username, entry_code, exit_code, fare, "Online-Net Banking", today))
+                            # Add user to passenger table
+                cursor.execute("""
+                    INSERT INTO passenger (user_id, pnr)
+                    VALUES (%s, %s)
+                """, (user_id, pnr))
+
                 conn.commit()
             except mysql.connector.Error as err:
                 conn.rollback()
@@ -396,13 +407,18 @@ def book_ticket():
             cursor.close()
             conn.close()
             message = "Ticket booked successfully!"
-            return render_template('book_ticket.html', message=message, qr_code_img=qr_code_img, stage='done')
+            return render_template('book_ticket.html', message=message, qr_code_img=qr_code_img,stage='done')
 
     return render_template('book_ticket.html', message=message)
 
 
-@app.route('/view_history/<user_id>')
-def view_history(user_id):
+@app.route('/view_history')
+def view_history():
+    # Check if user is logged in
+    username = session.get('username')
+    if not username:
+        return "User not logged in", 403
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
@@ -412,37 +428,279 @@ def view_history(user_id):
         WHERE username = %s
         ORDER BY booking_date DESC
     """
-    cursor.execute(query, (user_id,))
+    cursor.execute(query, (username,))
     result = cursor.fetchall()
 
-    # Convert into format expected by template
     tickets = []
     for row in result:
-        # Optional: parse booking_details for time/train/seat if needed
-        booking_details = row['booking_details']
-        parsed = booking_details.split(',') if booking_details else ['-', '-', '-']
-        train_number = parsed[0] if len(parsed) > 0 else '-'
-        time = parsed[1] if len(parsed) > 1 else '-'
-        seat_number = parsed[2] if len(parsed) > 2 else '-'
-
         tickets.append({
             "pnr": row["pnr"],
             "entry_station": row["entry_station"],
             "exit_station": row["exit_station"],
-            "date": row["booking_date"],
-            "train_number": train_number,
-            "time": time,
-            "seat_number": seat_number
+            "fare": row["fare"],
+            "booking_details": row["booking_details"],
+            "date": row["booking_date"]
         })
 
     cursor.close()
     connection.close()
 
-    return render_template('ticket_history.html', user_id=user_id, tickets=tickets)
+    return render_template('ticket_history.html', username=username, tickets=tickets)
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
-    return "<h2>Admin Dashboard (coming soon)</h2>"
+    return render_template('admin_dashboard.html')
+
+@app.route('/admin/view_users')
+def view_users():
+    filter_type = request.args.get('filter', 'all')  # 'all' or 'no_passenger'
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Get users based on filter
+    if filter_type == 'no_passenger':
+        cursor.execute("""
+            SELECT * FROM user
+            WHERE user_id NOT IN (SELECT user_id FROM passenger)
+        """)
+    else:
+        cursor.execute("SELECT * FROM user")
+    users = cursor.fetchall()
+
+    # Get all passenger user_ids to identify deletable ones
+    cursor.execute("SELECT DISTINCT user_id FROM passenger")
+    passenger_ids = {row['user_id'] for row in cursor.fetchall()}
+
+    cursor.close()
+    conn.close()
+
+    return render_template('view_users.html', users=users, passenger_ids=passenger_ids, filter_type=filter_type)
+
+
+@app.route('/admin/delete_user/<user_id>')
+def delete_user(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Step 1: Get all PNRs associated with this user from the passenger table
+        cursor.execute("SELECT pnr FROM passenger WHERE user_id = %s", (user_id,))
+        pnrs = cursor.fetchall()
+
+        # Step 2: Delete each related ticket (if any)
+        for row in pnrs:
+            pnr = row[0]  # or row['pnr'] if using dictionary=True
+            cursor.execute("DELETE FROM ticket WHERE pnr = %s", (pnr,))
+
+        # Step 3: Delete passenger record
+        cursor.execute("DELETE FROM passenger WHERE user_id = %s", (user_id,))
+
+        # Step 4: Delete credentials
+        cursor.execute("DELETE FROM credentials WHERE user_id = %s", (user_id,))
+
+        # Step 5: Delete user
+        cursor.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
+
+        conn.commit()
+        flash(f'User {user_id} deleted successfully.', 'success')
+
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error: {err.msg}', 'danger')
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('view_users'))
+
+@app.route('/admin/manage_schedule')
+def manage_schedule():
+    search = request.args.get('search', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT ms.schedule_id, ms.metro_id, m.metro_name, ms.st_code, s.st_name,
+           ms.arrival_time, ms.departure_time, ms.platform, ms.direction
+    FROM metro_schedule ms
+    JOIN metro m ON ms.metro_id = m.metro_id
+    JOIN station s ON ms.st_code = s.st_code
+    WHERE ms.metro_id LIKE %s
+    ORDER BY ms.metro_id, ms.arrival_time
+    """
+    cursor.execute(query, ('%' + search + '%',))
+    schedule = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('manage_schedule.html', schedule=schedule, search=search)
+@app.route('/admin/update_schedule_batch', methods=['POST'])
+def update_schedule_batch():
+    schedule_id = request.form.get('update_id')
+
+    if not schedule_id:
+        flash("No schedule selected for update.", "warning")
+        return redirect(url_for('manage_schedule'))
+
+    arrival_time = request.form.get(f'arrival_time_{schedule_id}')
+    departure_time = request.form.get(f'departure_time_{schedule_id}')
+    platform = request.form.get(f'platform_{schedule_id}')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE metro_schedule
+            SET arrival_time = %s,
+                departure_time = %s,
+                platform = %s
+            WHERE schedule_id = %s
+        """, (arrival_time, departure_time, platform, schedule_id))
+        conn.commit()
+        flash("Schedule updated successfully.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('manage_schedule', search=request.args.get('search', '')))
+
+
+
+@app.route('/admin/manage_metro', methods=['GET', 'POST'])
+def manage_metros():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Add new metro
+    if request.method == 'POST' and 'add_metro' in request.form:
+        metro_id = request.form.get('metro_id').strip()
+        metro_name = request.form.get('metro_name').strip()
+        line_color = request.form.get('line_color')
+
+        if metro_id and metro_name and line_color:
+            try:
+                cursor.execute(
+                    "INSERT INTO metro (metro_id, metro_name, line_color) VALUES (%s, %s, %s)",
+                    (metro_id, metro_name, line_color)
+                )
+                conn.commit()
+                flash("Metro added successfully!", "success")
+            except Exception as e:
+                conn.rollback()
+                flash(f"Error adding metro: {str(e)}", "danger")
+        else:
+            flash("All fields are required to add a metro.", "warning")
+
+    # Delete metro (only if it has no schedules)
+    elif request.method == 'POST' and 'delete_metro_id' in request.form:
+        delete_metro_id = request.form.get('delete_metro_id')
+        cursor.execute("SELECT COUNT(*) AS count FROM metro_schedule WHERE metro_id = %s", (delete_metro_id,))
+        count = cursor.fetchone()['count']
+
+        if count > 0:
+            flash("Cannot delete metro with existing schedules.", "warning")
+        else:
+            try:
+                cursor.execute("DELETE FROM metro WHERE metro_id = %s", (delete_metro_id,))
+                conn.commit()
+                flash("Metro deleted successfully!", "success")
+            except Exception as e:
+                conn.rollback()
+                flash(f"Error deleting metro: {str(e)}", "danger")
+
+    # Load all metros
+    cursor.execute("SELECT * FROM metro ORDER BY metro_id")
+    metros = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("manage_metro.html", metros=metros)
+
+
+@app.route('/admin/delete_metro/<metro_id>/<st_code>')
+def delete_metro(metro_id, st_code):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM metro_schedule WHERE metro_id=%s AND st_code=%s", (metro_id, st_code))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Metro schedule deleted!", "success")
+    return redirect(url_for('manage_metros'))
+
+
+@app.route('/admin/edit_metro/<metro_id>/<st_code>', methods=['GET', 'POST'])
+def edit_metro(metro_id, st_code):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        arrival_time = request.form['arrival_time']
+        departure_time = request.form['departure_time']
+        platform = request.form['platform']
+        direction = request.form['direction']
+
+        cursor.execute("""
+            UPDATE metro_schedule
+            SET arrival_time=%s, departure_time=%s, platform=%s, direction=%s
+            WHERE metro_id=%s AND st_code=%s
+        """, (arrival_time, departure_time, platform, direction, metro_id, st_code))
+        conn.commit()
+        flash("Metro schedule updated!", "success")
+        return redirect(url_for('manage_metros'))
+
+    cursor.execute("SELECT * FROM metro_schedule WHERE metro_id=%s AND st_code=%s", (metro_id, st_code))
+    data = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return render_template('edit_metro.html', data=data)
+
+
+@app.route('/admin/view_tickets')
+def view_tickets():
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT t.pnr, t.username, s1.st_name AS entry_station_name, s2.st_name AS exit_station_name,
+           t.fare, t.booking_details, t.booking_date
+    FROM ticket t
+    JOIN station s1 ON t.entry_station = s1.st_code
+    JOIN station s2 ON t.exit_station = s2.st_code
+    WHERE 1 = 1
+    """
+
+    params = []
+
+    if from_date:
+        query += " AND DATE(t.booking_date) >= %s"
+        params.append(from_date)
+
+    if to_date:
+        query += " AND DATE(t.booking_date) <= %s"
+        params.append(to_date)
+
+    query += " ORDER BY t.booking_date DESC"
+
+    cursor.execute(query, params)
+    tickets = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("view_tickets.html", tickets=tickets)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

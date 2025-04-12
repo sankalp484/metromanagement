@@ -86,8 +86,7 @@
   <div class="result-box">
     <p>Your ticket QR code:</p>
     <img class="qr-code" src="data:image/png;base64,{{ qr_code_img }}" alt="QR Code">
-    <a href="{{ url_for('user_dashboard', user_id=user_id) }}">
-      <button class="back-btn">Back to Dashboard</button>
+
     </a>
   </div>
   {% elif not fare %}
