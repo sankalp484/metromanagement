@@ -274,7 +274,7 @@ def view_routes():
     route_info = ""
     error_message = ""
     full_path = []
-
+    metro_options = []
     if source and destination:
         if source == destination:
             route_info = "You are already at your destination."
