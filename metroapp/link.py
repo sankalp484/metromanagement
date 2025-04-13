@@ -687,9 +687,10 @@ def view_tickets():
     entry_station = request.args.get('entry_station')
     exit_station = request.args.get('exit_station')
     popular_only = request.args.get('popular_only')
-
+    line_color = request.args.get('line_color')
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
     cursor.execute("""
         SELECT st_code FROM (
             SELECT entry_station AS st_code FROM ticket
@@ -733,6 +734,10 @@ def view_tickets():
         query += " AND (t.entry_station = %s OR t.exit_station = %s)"
         params.extend([most_popular_code, most_popular_code])
 
+    if line_color:
+        query += " AND (s1.line_color = %s OR s2.line_color = %s)"
+        params.extend([line_color, line_color])
+
     query += " ORDER BY t.booking_date DESC"
 
     cursor.execute(query, params)
@@ -748,6 +753,7 @@ def analysis():
     selected_date = ''
     station_traffic_results = []
     total_line_changes = None
+    avg_passengers_per_metro = None
 
     if request.method == 'POST':
         selected_date = request.form.get('line_change_date', '')
@@ -766,9 +772,9 @@ def analysis():
             FROM ticket t
             JOIN station s ON t.entry_station = s.st_code
             GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
-            
+
             UNION ALL
-            
+
             SELECT 
                 s.st_code,
                 s.st_name,
@@ -807,14 +813,32 @@ def analysis():
         result = cursor.fetchone()
         total_line_changes = result['total_line_changes'] or 0
 
+        # Query 3: Average passengers per metro
+        query3 = """
+        SELECT 
+            COALESCE(AVG(passenger_count), 0) AS avg_passengers_per_metro
+        FROM (
+            SELECT 
+                ms.metro_id, 
+                COUNT(p.passenger_id) AS passenger_count
+            FROM metro_schedule ms
+            LEFT JOIN ticket t ON ms.st_code = t.entry_station
+            LEFT JOIN passenger p ON t.pnr = p.pnr
+            GROUP BY ms.metro_id
+        ) metro_passenger_counts;
+        """
+        cursor.execute(query3)
+        result = cursor.fetchone()
+        avg_passengers_per_metro = result['avg_passengers_per_metro']
+
         cursor.close()
         conn.close()
 
     return render_template("analysis.html",
                            selected_date=selected_date,
                            station_traffic_results=station_traffic_results,
-                           total_line_changes=total_line_changes)
-
+                           total_line_changes=total_line_changes,
+                           avg_passengers_per_metro=avg_passengers_per_metro)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -63,6 +63,10 @@
 
     .result-box {
       margin-top: 20px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -106,20 +110,28 @@
 <div class="analysis-section">
   <h2>Total Line Changes</h2>
 
-  <!-- Form always visible -->
   <form method="POST" class="input-form">
     <label for="line_change_date">Select a Date:</label>
     <input type="date" name="line_change_date" id="line_change_date" required>
     <button type="submit">Check</button>
   </form>
 
-  <!-- Show result only after form submission -->
   {% if selected_date %}
   <div class="result-box">
     <p><strong>Total line changes on {{ selected_date }}:</strong> {{ total_line_changes }}</p>
   </div>
   {% endif %}
 </div>
+
+<!-- Third Query: Average Passengers per Metro -->
+{% if avg_passengers_per_metro is not none %}
+<div class="analysis-section">
+  <h2>Average Passengers per Metro</h2>
+  <div class="result-box">
+    <p><strong>Average passengers per metro:</strong> {{ avg_passengers_per_metro | round(2) }}</p>
+  </div>
+</div>
+{% endif %}
 
 </body>
 </html>

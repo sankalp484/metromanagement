@@ -26,6 +26,16 @@
         <input type="text" id="exit_station" name="exit_station" class="form-control" value="{{ request.args.get('exit_station', '') }}">
     </div>
 
+    <div class="col-md-3">
+        <label for="line_color" class="form-label">Metro Line Color:</label>
+        <select id="line_color" name="line_color" class="form-select">
+            <option value="" {% if request.args.get('line_color') == '' %}selected{% endif %}>-- All Colors --</option>
+            <option value="Red" {% if request.args.get('line_color') == 'Red' %}selected{% endif %}>Red</option>
+            <option value="Blue" {% if request.args.get('line_color') == 'Blue' %}selected{% endif %}>Blue</option>
+            <option value="Pink" {% if request.args.get('line_color') == 'Pink' %}selected{% endif %}>Pink</option>
+        </select>
+    </div>
+
     <div class="col-md-4">
         <div class="form-check mt-4">
             <input class="form-check-input" type="checkbox" name="popular_only" id="popular_only"
