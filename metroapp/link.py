@@ -317,9 +317,25 @@ def view_routes():
 
                 if not transfer_found:
                     error_message = "No route found with a single transfer."
+        cursor.execute("""
+                        SELECT ms1.metro_id, m.metro_name, ms1.st_code AS start_station, ms1.arrival_time AS start_time, 
+                               ms2.st_code AS end_station, ms2.arrival_time AS end_time
+                        FROM metro_schedule ms1
+                        JOIN metro_schedule ms2 ON ms1.metro_id = ms2.metro_id
+                        JOIN metro m ON ms1.metro_id = m.metro_id
+                        WHERE ms1.st_code = (
+                            SELECT st_code FROM station WHERE st_name = %s LIMIT 1
+                        )
+                        AND ms2.st_code = (
+                            SELECT st_code FROM station WHERE st_name = %s LIMIT 1
+                        )
+                        AND ms1.arrival_time < ms2.arrival_time
+                        ORDER BY ms1.arrival_time
+                    """, (source, destination))
+        metro_options = cursor.fetchall()
 
     conn.close()
-    return render_template('view_routes.html', route_info=route_info, error_message=error_message, full_path=full_path)
+    return render_template('view_routes.html', route_info=route_info, error_message=error_message, full_path=full_path,metro_options=metro_options)
 
 
 
@@ -668,10 +684,24 @@ def edit_metro(metro_id, st_code):
 def view_tickets():
     from_date = request.args.get('from_date')
     to_date = request.args.get('to_date')
+    entry_station = request.args.get('entry_station')
+    exit_station = request.args.get('exit_station')
+    popular_only = request.args.get('popular_only')
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
+    cursor.execute("""
+        SELECT st_code FROM (
+            SELECT entry_station AS st_code FROM ticket
+            UNION ALL
+            SELECT exit_station FROM ticket
+        ) AS combined
+        GROUP BY st_code
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    """)
+    popular_station = cursor.fetchone()
+    most_popular_code = popular_station['st_code'] if popular_station else None
     query = """
     SELECT t.pnr, t.username, s1.st_name AS entry_station_name, s2.st_name AS exit_station_name,
            t.fare, t.booking_details, t.booking_date
@@ -691,15 +721,99 @@ def view_tickets():
         query += " AND DATE(t.booking_date) <= %s"
         params.append(to_date)
 
+    if entry_station:
+        query += " AND t.entry_station = %s"
+        params.append(entry_station)
+
+    if exit_station:
+        query += " AND t.exit_station = %s"
+        params.append(exit_station)
+
+    if popular_only == 'on' and most_popular_code:
+        query += " AND (t.entry_station = %s OR t.exit_station = %s)"
+        params.extend([most_popular_code, most_popular_code])
+
     query += " ORDER BY t.booking_date DESC"
 
     cursor.execute(query, params)
     tickets = cursor.fetchall()
+    ticket_count = len(tickets)
 
     cursor.close()
     conn.close()
 
-    return render_template("view_tickets.html", tickets=tickets)
+    return render_template("view_tickets.html", tickets=tickets ,ticket_count = ticket_count,most_popular_code=most_popular_code)
+@app.route('/analysis', methods=['GET', 'POST'])
+def analysis():
+    selected_date = ''
+    station_traffic_results = []
+    total_line_changes = None
+
+    if request.method == 'POST':
+        selected_date = request.form.get('line_change_date', '')
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Query 1: Station traffic (entry + exit) grouped by day of week
+        query1 = """
+        WITH station_traffic AS (
+            SELECT 
+                s.st_code,
+                s.st_name,
+                DAYOFWEEK(t.booking_date) AS day_of_week,
+                COUNT(*) AS passenger_count
+            FROM ticket t
+            JOIN station s ON t.entry_station = s.st_code
+            GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
+            
+            UNION ALL
+            
+            SELECT 
+                s.st_code,
+                s.st_name,
+                DAYOFWEEK(t.booking_date) AS day_of_week,
+                COUNT(*) AS passenger_count
+            FROM ticket t
+            JOIN station s ON t.exit_station = s.st_code
+            GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
+        )
+        SELECT 
+            st_code, 
+            st_name, 
+            day_of_week, 
+            SUM(passenger_count) AS total_passengers
+        FROM station_traffic
+        GROUP BY st_code, st_name, day_of_week
+        ORDER BY total_passengers DESC;
+        """
+        cursor.execute(query1)
+        station_traffic_results = cursor.fetchall()
+
+        # Query 2: Total line changes on selected date
+        query2 = """
+        SELECT SUM(
+            CASE 
+                WHEN s1.line_color <> s2.line_color THEN 1 
+                ELSE 0 
+            END
+        ) AS total_line_changes
+        FROM ticket t
+        JOIN station s1 ON t.entry_station = s1.st_code
+        JOIN station s2 ON t.exit_station = s2.st_code
+        WHERE t.booking_date = %s;
+        """
+        cursor.execute(query2, (selected_date,))
+        result = cursor.fetchone()
+        total_line_changes = result['total_line_changes'] or 0
+
+        cursor.close()
+        conn.close()
+
+    return render_template("analysis.html",
+                           selected_date=selected_date,
+                           station_traffic_results=station_traffic_results,
+                           total_line_changes=total_line_changes)
 
 
 if __name__ == '__main__':

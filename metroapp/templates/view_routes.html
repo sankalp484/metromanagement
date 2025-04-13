@@ -14,7 +14,7 @@
       background-color: rgba(255, 255, 255, 0.9);
       padding: 30px;
       border-radius: 10px;
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
@@ -62,10 +62,29 @@
       font-size: 16px;
       color: #003366;
       box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
     .route-path-box span {
       font-weight: bold;
       color: #00509e;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+    }
+    table th {
+      background-color: #00509e;
+      color: white;
+    }
+    table tr:nth-child(even) {
+      background-color: #f9f9f9;
     }
   </style>
 </head>
@@ -95,6 +114,34 @@
     {{ station }}{% if not loop.last %} &rarr; {% endif %}
     {% endfor %}
   </div>
+  {% endif %}
+
+  {% if metro_options %}
+  <h3 style="text-align:center;">Available Metro Options</h3>
+  <table>
+    <thead>
+    <tr>
+      <th>Metro ID</th>
+      <th>Metro Name</th>
+      <th>Start Station</th>
+      <th>Start Time</th>
+      <th>End Station</th>
+      <th>End Time</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for metro in metro_options %}
+    <tr>
+      <td>{{ metro[0] }}</td>
+      <td>{{ metro[1] }}</td>
+      <td>{{ metro[2] }}</td>
+      <td>{{ metro[3] }}</td>
+      <td>{{ metro[4] }}</td>
+      <td>{{ metro[5] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
 </div>
 </body>
