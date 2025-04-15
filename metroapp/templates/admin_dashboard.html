@@ -8,7 +8,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-image: url("{{ url_for('static', filename='background.jpg.png') }}");
+      background-image: url("{{ url_for('static', filename='background2.png') }}");
       background-size: cover;
       background-position: center;
       height: 100vh;
@@ -18,14 +18,12 @@
     .welcome {
       position: absolute;
       top: 20px;
-      left: 20px;
-      color: black;
+      left: 30px;
+      color: #ffcc00; /* Bright gold-yellow */
       font-size: 28px;
-      font-weight: bold;
-      font-family: 'Georgia', serif;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 10px 20px;
-      border-radius: 8px;
+      font-weight: 700;
+      font-family: 'Segoe UI', sans-serif;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.7); /* Adds contrast without background */
     }
 
     .logout-button {
@@ -63,18 +61,23 @@
       display: block;
       text-align: center;
       padding: 20px 40px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
+      background: linear-gradient(to right, #ffb347, #ffcc33); /* warm amber gradient */
+      color: #1a1a1a;
       text-decoration: none;
       font-size: 20px;
-      border-radius: 10px;
+      font-weight: bold;
+      border-radius: 12px;
       width: 300px;
-      transition: background-color 0.3s ease;
+      margin: 20px auto;
+      box-shadow: 0 8px 20px rgba(255, 204, 51, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .btn:hover {
-      background-color: rgba(0, 0, 0, 0.9);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(255, 204, 51, 0.6);
     }
+
   </style>
 </head>
 <body>

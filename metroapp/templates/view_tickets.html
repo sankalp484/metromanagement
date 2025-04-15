@@ -4,94 +4,250 @@
     <meta charset="UTF-8">
     <title>View Tickets</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background3.png') }}");
+            background-size: cover;
+            background-position: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff8dc;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(10px);
+            max-width: 1400px;
+            margin: auto;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 5px #ffcc00aa;
+        }
+
+        .no-tickets {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #fff8dc;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 30px auto 0 auto;
+            backdrop-filter: blur(6px);
+        }
+
+        .filter-form {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .logout-button img {
+            height: 24px;
+        }
+
+        select.form-select, input.form-control {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff8dc;
+            border: none;
+        }
+
+        select.form-select option {
+            color: #000;
+        }
+
+        table {
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead {
+            background: linear-gradient(90deg, #ffcc00, #ffd700);
+            color: #000;
+            font-weight: bold;
+            text-shadow: 0 0 2px #fff;
+        }
+
+        .table tbody tr {
+            background-color: rgba(255, 255, 255, 0.07);
+            color: #fff8dc;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(255, 215, 0, 0.15);
+            transform: scale(1.01);
+            box-shadow: 0 0 10px #ffd70066;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+            text-align: center;
+            padding: 12px;
+            border-color: rgba(255, 215, 0, 0.2);
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+            box-shadow: 0 0 10px #007bff88;
+        }
+
+        .btn-secondary {
+            background-color: #444;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #666;
+            box-shadow: 0 0 10px #ffaa00aa;
+        }
+
+        .alert {
+            margin-top: 20px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .badge {
+            background-color: #ffcc00;
+            color: #000;
+        }
+    </style>
 </head>
-<body class="container py-4">
-<h2 class="mb-4">All Booked Tickets</h2>
-
-<form method="GET" class="row g-3 align-items-end mb-4">
-    <div class="col-md-3">
-        <label for="from_date" class="form-label">From Date:</label>
-        <input type="date" id="from_date" name="from_date" class="form-control" value="{{ request.args.get('from_date', '') }}">
-    </div>
-    <div class="col-md-3">
-        <label for="to_date" class="form-label">To Date:</label>
-        <input type="date" id="to_date" name="to_date" class="form-control" value="{{ request.args.get('to_date', '') }}">
-    </div>
-    <div class="col-md-3">
-        <label for="entry_station" class="form-label">Entry Station Code:</label>
-        <input type="text" id="entry_station" name="entry_station" class="form-control" value="{{ request.args.get('entry_station', '') }}">
-    </div>
-    <div class="col-md-3">
-        <label for="exit_station" class="form-label">Exit Station Code:</label>
-        <input type="text" id="exit_station" name="exit_station" class="form-control" value="{{ request.args.get('exit_station', '') }}">
+<body>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="fs-4 fw-bold text-warning">Welcome, Admin</div>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm" title="Logout">
+            <img src="{{ url_for('static', filename='logout.jpg') }}" alt="Logout" style="height: 20px;">
+        </a>
     </div>
 
-    <div class="col-md-3">
-        <label for="line_color" class="form-label">Metro Line Color:</label>
-        <select id="line_color" name="line_color" class="form-select">
-            <option value="" {% if request.args.get('line_color') == '' %}selected{% endif %}>-- All Colors --</option>
-            <option value="Red" {% if request.args.get('line_color') == 'Red' %}selected{% endif %}>Red</option>
-            <option value="Blue" {% if request.args.get('line_color') == 'Blue' %}selected{% endif %}>Blue</option>
-            <option value="Pink" {% if request.args.get('line_color') == 'Pink' %}selected{% endif %}>Pink</option>
-        </select>
+    <h2>All Booked Tickets</h2>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-
-    <div class="col-md-4">
-        <div class="form-check mt-4">
-            <input class="form-check-input" type="checkbox" name="popular_only" id="popular_only"
-                   {% if request.args.get('popular_only') == 'on' %} checked {% endif %}>
-            <label class="form-check-label" for="popular_only">
-                Show Only Most Popular Station
-                {% if most_popular_name %}
-                ({{ most_popular_name }})
-                {% endif %}
-            </label>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <button type="submit" class="btn btn-primary">Filter</button>
-    </div>
-</form>
-
-{% if ticket_count is not none %}
-<div class="alert alert-info">
-    Total Results Found: <strong>{{ ticket_count }}</strong>
-</div>
-{% endif %}
-
-{% if tickets %}
-<table class="table table-bordered table-hover">
-    <thead class="table-light">
-    <tr>
-        <th>PNR</th>
-        <th>Username</th>
-        <th>From Station</th>
-        <th>To Station</th>
-        <th>Fare (₹)</th>
-        <th>Booking Details</th>
-        <th>Booking Date</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for ticket in tickets %}
-    <tr>
-        <td>{{ ticket.pnr }}</td>
-        <td>{{ ticket.username }}</td>
-        <td>{{ ticket.entry_station_name }}</td>
-        <td>{{ ticket.exit_station_name }}</td>
-        <td>{{ ticket.fare }}</td>
-        <td>{{ ticket.booking_details }}</td>
-        <td>{{ ticket.booking_date }}</td>
-    </tr>
     {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No tickets found.</p>
-{% endif %}
+    {% endif %}
+    {% endwith %}
 
-<a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+    <!-- Filter Form -->
+    <div class="filter-form">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="from_date" class="form-label">From Date:</label>
+                <input type="date" id="from_date" name="from_date" class="form-control" value="{{ request.args.get('from_date', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="to_date" class="form-label">To Date:</label>
+                <input type="date" id="to_date" name="to_date" class="form-control" value="{{ request.args.get('to_date', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="entry_station" class="form-label">Entry Station:</label>
+                <input type="text" id="entry_station" name="entry_station" class="form-control" value="{{ request.args.get('entry_station', '') }}" placeholder="Station code">
+            </div>
+            <div class="col-md-3">
+                <label for="exit_station" class="form-label">Exit Station:</label>
+                <input type="text" id="exit_station" name="exit_station" class="form-control" value="{{ request.args.get('exit_station', '') }}" placeholder="Station code">
+            </div>
+
+            <div class="col-md-4">
+                <label for="line_color" class="form-label">Metro Line:</label>
+                <select id="line_color" name="line_color" class="form-select">
+                    <option value="" {% if request.args.get('line_color') == '' %}selected{% endif %}>All Lines</option>
+                    <option value="Red" {% if request.args.get('line_color') == 'Red' %}selected{% endif %}>Red Line</option>
+                    <option value="Blue" {% if request.args.get('line_color') == 'Blue' %}selected{% endif %}>Blue Line</option>
+                    <option value="Pink" {% if request.args.get('line_color') == 'Pink' %}selected{% endif %}>Pink Line</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-check mt-4 pt-2">
+                    <input class="form-check-input" type="checkbox" name="popular_only" id="popular_only"
+                           {% if request.args.get('popular_only') == 'on' %} checked {% endif %}>
+                    <label class="form-check-label" for="popular_only">
+                        Show Most Popular Station Only
+                        {% if most_popular_name %}
+                        <span class="badge bg-primary ms-2">{{ most_popular_name }}</span>
+                        {% endif %}
+                    </label>
+                </div>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    {% if ticket_count is not none %}
+    <div class="alert alert-info">
+        <strong>Total Tickets Found:</strong> {{ ticket_count }}
+    </div>
+    {% endif %}
+
+    <!-- Tickets Table -->
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>PNR</th>
+                <th>Username</th>
+                <th>From Station</th>
+                <th>To Station</th>
+                <th>Fare (₹)</th>
+                <th>Booking Details</th>
+                <th>Booking Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.pnr }}</td>
+                <td>{{ ticket.username }}</td>
+                <td>{{ ticket.entry_station_name }}</td>
+                <td>{{ ticket.exit_station_name }}</td>
+                <td>{{ ticket.fare }}</td>
+                <td>{{ ticket.booking_details }}</td>
+                <td>{{ ticket.booking_date }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="no-tickets">No tickets found matching your criteria.</div>
+    {% endif %}
+
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

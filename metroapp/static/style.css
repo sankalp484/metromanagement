@@ -1,64 +1,92 @@
-body {
+/* Background setup */
+.login-body {
     margin: 0;
-    padding: 0;
-    background: url('/static/background.jpg.png') no-repeat center center fixed;
+    font-family: system-ui, sans-serif;
+    background-image: url('background2.png'); /* metro night bg */
     background-size: cover;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-position: center;
     height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff8dc;
 }
 
-.container {
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    text-align: center;
+/* Glassy container */
+.login-container {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.3);
+    backdrop-filter: blur(8px);
     width: 300px;
+    text-align: center;
 }
 
-.container h2 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-    width: 90%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-button {
-    background-color: #007BFF;
-    color: white;
-    padding: 10px 25px;
+/* Form inputs */
+.login-container input[type="text"],
+.login-container input[type="password"],
+.login-container input[type="email"]
+{
+    width: 100%;
+    padding: 0.6rem;
+    margin: 0.8rem 0;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff8dc;
+    font-size: 1rem;
+}
+
+.login-container input::placeholder {
+    color: #fff8dcaa;
+}
+
+/* Button styling */
+.login-container button {
+    width: 100%;
+    padding: 0.6rem;
+    background-color: #ffaa00;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    color: black;
+    font-size: 1rem;
     cursor: pointer;
-    margin-top: 10px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-button:hover {
-    background-color: #0056b3;
+.login-container button:hover {
+    background-color: #ffbb33;
+    box-shadow: 0 0 10px #ffaa00cc;
 }
 
-p a {
-    color: #007BFF;
+/* Flash message list */
+.message-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.message-success {
+    color: #90ee90;
+}
+
+.message-error, .message-danger {
+    color: #ff6f6f;
+}
+
+/* Sign up link */
+.signup-link {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.signup-link a {
+    color: #ffaa00;
     text-decoration: none;
 }
 
-p a:hover {
+.signup-link a:hover {
     text-decoration: underline;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 15px 0;
 }

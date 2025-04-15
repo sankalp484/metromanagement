@@ -3,72 +3,233 @@
 <head>
   <meta charset="UTF-8">
   <title>Manage Metros</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-image: url("{{ url_for('static', filename='background3.png') }}");
+      background-size: cover;
+      background-position: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff8dc;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      backdrop-filter: blur(10px);
+      max-width: 1000px;
+      margin: auto;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: bold;
+      color: #ffcc00;
+      text-shadow: 0 0 5px #ffcc00aa;
+    }
+
+    .no-metros {
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+      color: #fff8dc;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 30px auto 0 auto;
+      backdrop-filter: blur(6px);
+    }
+
+    .card-header {
+      background: linear-gradient(90deg, #ffcc00, #ffd700);
+      color: #000;
+      font-weight: bold;
+    }
+
+    .logout-button img {
+      height: 24px;
+    }
+
+    select.form-select, input.form-control {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #fff8dc;
+      border: none;
+    }
+
+    select.form-select option {
+      color: #000;
+    }
+
+    table {
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background: linear-gradient(90deg, #ffcc00, #ffd700);
+      color: #000;
+      font-weight: bold;
+      text-shadow: 0 0 2px #fff;
+    }
+
+    .table tbody tr {
+      background-color: rgba(255, 255, 255, 0.07);
+      color: #fff8dc;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .table tbody tr:hover {
+      background-color: rgba(255, 215, 0, 0.15);
+      transform: scale(1.01);
+      box-shadow: 0 0 10px #ffd70066;
+    }
+
+    .table td, .table th {
+      vertical-align: middle;
+      text-align: center;
+      padding: 12px;
+      border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-success {
+      background-color: #28a745;
+      border: none;
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+      box-shadow: 0 0 10px #28a74588;
+    }
+
+    .btn-danger {
+      background-color: #ff4d4d;
+      border: none;
+    }
+
+    .btn-danger:hover {
+      background-color: #ff1a1a;
+      box-shadow: 0 0 10px #ff6f6f88;
+    }
+
+    .btn-secondary {
+      background-color: #444;
+      border: none;
+    }
+
+    .btn-secondary:hover {
+      background-color: #666;
+      box-shadow: 0 0 10px #ffaa00aa;
+    }
+
+    .alert {
+      margin-top: 20px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.5);
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
 </head>
-<body class="container py-4">
-<h2>Manage Metros</h2>
+<body>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="fs-4 fw-bold text-warning">Welcome, Admin</div>
+    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm" title="Logout">
+      <img src="{{ url_for('static', filename='logout.jpg') }}" alt="Logout" style="height: 20px;">
+    </a>
+  </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-  {{ message }}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% endfor %}
-{% endif %}
-{% endwith %}
+  <h2>Manage Metros</h2>
 
-<!-- Add Metro Form -->
-<form method="POST" class="row g-3 mb-4">
-  <input type="hidden" name="add_metro" value="1">
-  <div class="col-md-2">
-    <input type="text" name="metro_id" class="form-control" placeholder="Metro ID" required>
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
-  <div class="col-md-4">
-    <input type="text" name="metro_name" class="form-control" placeholder="Metro Name" required>
-  </div>
-  <div class="col-md-3">
-    <select name="line_color" class="form-select" required>
-      <option value="">Select Line</option>
-      <option value="Blue">Blue</option>
-      <option value="Pink">Pink</option>
-      <option value="Red">Red</option>
-    </select>
-  </div>
-  <div class="col-md-3">
-    <button type="submit" class="btn btn-primary">Add Metro</button>
-  </div>
-</form>
-
-<!-- Metro List -->
-<table class="table table-bordered table-striped">
-  <thead>
-  <tr>
-    <th>Metro ID</th>
-    <th>Name</th>
-    <th>Line Color</th>
-    <th>Action</th>
-  </tr>
-  </thead>
-  <tbody>
-  {% for metro in metros %}
-  <tr>
-    <td>{{ metro.metro_id }}</td>
-    <td>{{ metro.metro_name }}</td>
-    <td>{{ metro.line_color }}</td>
-    <td>
-      <form method="POST" style="display:inline-block;" onsubmit="return confirm('Delete metro {{ metro.metro_id }}?')">
-        <input type="hidden" name="delete_metro_id" value="{{ metro.metro_id }}">
-        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-      </form>
-    </td>
-  </tr>
   {% endfor %}
-  </tbody>
-</table>
+  {% endif %}
+  {% endwith %}
 
-<a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+  <!-- Add Metro Form -->
+  <div class="card mb-4" style="background-color: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 215, 0, 0.3);">
+    <div class="card-header">
+      Add New Metro
+    </div>
+    <div class="card-body">
+      <form method="POST" class="row g-3">
+        <input type="hidden" name="add_metro" value="1">
+        <div class="col-md-3">
+          <label for="metro_id" class="form-label">Metro ID</label>
+          <input type="text" id="metro_id" name="metro_id" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <label for="metro_name" class="form-label">Metro Name</label>
+          <input type="text" id="metro_name" name="metro_name" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label for="line_color" class="form-label">Line Color</label>
+          <select id="line_color" name="line_color" class="form-select" required>
+            <option value="">Select Line</option>
+            <option value="Blue">Blue</option>
+            <option value="Pink">Pink</option>
+            <option value="Red">Red</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-success">Add Metro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Metros Table -->
+  {% if metros %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Metro ID</th>
+        <th>Name</th>
+        <th>Line Color</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for metro in metros %}
+      <tr>
+        <td>{{ metro.metro_id }}</td>
+        <td>{{ metro.metro_name }}</td>
+        <td>{{ metro.line_color }}</td>
+        <td>
+          <form method="POST" style="display:inline-block;">
+            <input type="hidden" name="delete_metro_id" value="{{ metro.metro_id }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+                    onclick="return confirm('Are you sure you want to delete metro {{ metro.metro_id }}?')">
+              Delete
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="no-metros">No metros found.</div>
+  {% endif %}
+
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

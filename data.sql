@@ -1,4 +1,3 @@
-USE metro_management;
 -- Insert Users
 INSERT INTO user (user_id, full_name, email, phone) VALUES
                                                         ('alice123', 'Alice Johnson', 'alice.johnson@example.com', '9876543210'),
@@ -18,7 +17,7 @@ INSERT INTO credentials (user_id, passcode) VALUES
                                                 ('gore', 'goress1'),
                                                 ('hyyy', 'hyyydavid1');
 
-
+INSERT INTO admin (user_name, passcode) VALUES ('admin1', 'secure123');
 
 -- Insert Metro Stations (Now supporting multiple lines)
 INSERT INTO station (st_code, st_name, line_color) VALUES
@@ -180,7 +179,7 @@ INSERT INTO metro_schedule (metro_id, route_id, st_code, arrival_time, departure
 
 INSERT INTO ticket (pnr, username, entry_station, exit_station, fare ,booking_details, booking_date)
 VALUES
-    ('PNR001', 'alice123', 'S1', 'S5', 50, 'Online - UPI', '2024-03-20'),
+    ('PNR001', 'alice123', 'S1', 'S8', 50, 'Online - UPI', '2024-03-20'),
     ('PNR002', 'bob456', 'S2', 'S3', 54, 'Counter - Cash', '2024-03-21'),
     ('PNR003', 'charlie789', 'S4', 'S6',56,  'Online - Credit Card', '2024-03-22'),
     ('PNR004', 'dave321', 'S2', 'S1', 10, 'Online - Net Banking', '2024-03-22'),
@@ -193,4 +192,3 @@ VALUES
     ('charlie789', 'PNR003'),
     ('dave321', 'PNR004'),
     ('emma654', 'PNR005');
-

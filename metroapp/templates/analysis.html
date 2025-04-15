@@ -1,137 +1,238 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Analysis Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
+      background-image: url("{{ url_for('static', filename='background3.png') }}");
+      background-size: cover;
+      background-position: center;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
+      color: #fff8dc;
       padding: 20px;
     }
 
+    .container {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      backdrop-filter: blur(10px);
+      max-width: 1200px;
+      margin: auto;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
     h1, h2 {
-      color: #333;
+      font-weight: bold;
+      color: #ffcc00;
+      text-shadow: 0 0 5px #ffcc00aa;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
     }
 
     .analysis-section {
       margin-bottom: 40px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-    }
-
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #ccc;
-    }
-
-    th {
-      background-color: #007bff;
-      color: white;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
     }
 
     .input-form {
-      margin-top: 10px;
-    }
-
-    .input-form input[type="date"] {
-      padding: 8px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .input-form button {
-      padding: 8px 16px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
-    .input-form button:hover {
-      background-color: #0056b3;
+      margin: 20px 0;
     }
 
     .result-box {
       margin-top: 20px;
-      background-color: #fff;
-      padding: 15px;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .logout-button img {
+      height: 24px;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 20px;
+      font-size: 16px;
+      color: #fff8dc;
+      font-style: italic;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+    }
+
+    select.form-select, input.form-control {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #fff8dc;
+      border: none;
+    }
+
+    select.form-select option {
+      color: #000;
+    }
+
+    table {
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background: linear-gradient(90deg, #ffcc00, #ffd700);
+      color: #000;
+      font-weight: bold;
+      text-shadow: 0 0 2px #fff;
+    }
+
+    .table tbody tr {
+      background-color: rgba(255, 255, 255, 0.07);
+      color: #fff8dc;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .table tbody tr:hover {
+      background-color: rgba(255, 215, 0, 0.15);
+      transform: scale(1.01);
+      box-shadow: 0 0 10px #ffd70066;
+    }
+
+    .table td, .table th {
+      vertical-align: middle;
+      text-align: center;
+      padding: 12px;
+      border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background-color: #0069d9;
+      box-shadow: 0 0 10px #007bff88;
+    }
+
+    .btn-secondary {
+      background-color: #444;
+      border: none;
+    }
+
+    .btn-secondary:hover {
+      background-color: #666;
+      box-shadow: 0 0 10px #ffaa00aa;
+    }
+
+    .alert {
+      margin-top: 20px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.5);
+      background-color: rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
 <body>
-
-<h1>Admin Analysis</h1>
-
-<!-- First Query: Station Traffic -->
-<div class="analysis-section">
-  <h2>Station Traffic by Day of Week</h2>
-  <div class="result-box">
-    <table>
-      <tr>
-        <th>Station Code</th>
-        <th>Station Name</th>
-        <th>Day of Week</th>
-        <th>Total Passengers</th>
-      </tr>
-      {% if station_traffic_results %}
-      {% for row in station_traffic_results %}
-      <tr>
-        <td>{{ row.st_code }}</td>
-        <td>{{ row.st_name }}</td>
-        <td>
-          {% set days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
-          {{ days[row.day_of_week - 1] }}
-        </td>
-        <td>{{ row.total_passengers }}</td>
-      </tr>
-      {% endfor %}
-      {% else %}
-      <tr>
-        <td colspan="4">No traffic data available.</td>
-      </tr>
-      {% endif %}
-    </table>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="fs-4 fw-bold text-warning">Welcome, Admin</div>
+    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm" title="Logout">
+      <img src="{{ url_for('static', filename='logout.jpg') }}" alt="Logout" style="height: 20px;">
+    </a>
   </div>
-</div>
 
-<!-- Second Query: Line Change Count -->
-<div class="analysis-section">
-  <h2>Total Line Changes</h2>
+  <h1>Admin Analysis Dashboard</h1>
 
-  <form method="POST" class="input-form">
-    <label for="line_change_date">Select a Date:</label>
-    <input type="date" name="line_change_date" id="line_change_date" required>
-    <button type="submit">Check</button>
-  </form>
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
 
-  {% if selected_date %}
-  <div class="result-box">
-    <p><strong>Total line changes on {{ selected_date }}:</strong> {{ total_line_changes }}</p>
+  <!-- First Query: Station Traffic -->
+  <div class="analysis-section">
+    <h2>Station Traffic by Day of Week</h2>
+    <div class="result-box">
+      {% if station_traffic_results %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Station Code</th>
+            <th>Station Name</th>
+            <th>Day of Week</th>
+            <th>Total Passengers</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for row in station_traffic_results %}
+          <tr>
+            <td>{{ row.st_code }}</td>
+            <td>{{ row.st_name }}</td>
+            <td>
+              {% set days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+              {{ days[row.day_of_week - 1] }}
+            </td>
+            <td>{{ row.total_passengers }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="no-data">No traffic data available.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Second Query: Line Change Count -->
+  <div class="analysis-section">
+    <h2>Total Line Changes</h2>
+    <form method="POST" class="input-form row g-3 align-items-center">
+      <div class="col-auto">
+        <label for="line_change_date" class="col-form-label">Select a Date:</label>
+      </div>
+      <div class="col-auto">
+        <input type="date" class="form-control" name="line_change_date" id="line_change_date" required>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Check</button>
+      </div>
+    </form>
+
+    {% if selected_date %}
+    <div class="result-box alert alert-info">
+      <h5 class="mb-0">Total line changes on {{ selected_date }}: <strong>{{ total_line_changes }}</strong></h5>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Third Query: Average Passengers per Metro -->
+  {% if avg_passengers_per_metro is not none %}
+  <div class="analysis-section">
+    <h2>Average Passengers per Metro</h2>
+    <div class="result-box alert alert-success">
+      <h5 class="mb-0">Average passengers per metro: <strong>{{ avg_passengers_per_metro | round(2) }}</strong></h5>
+    </div>
   </div>
   {% endif %}
+
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>
 
-<!-- Third Query: Average Passengers per Metro -->
-{% if avg_passengers_per_metro is not none %}
-<div class="analysis-section">
-  <h2>Average Passengers per Metro</h2>
-  <div class="result-box">
-    <p><strong>Average passengers per metro:</strong> {{ avg_passengers_per_metro | round(2) }}</p>
-  </div>
-</div>
-{% endif %}
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
