@@ -198,6 +198,20 @@
     </div>
   </div>
 
+  <!-- Third Query: Average Passengers per Metro -->
+  <div class="analysis-section">
+    <h2>Average Passengers per Metro</h2>
+    <div class="result-box">
+      {% if avg_passengers_per_metro is not none %}
+      <div class="alert alert-success">
+        <h5 class="mb-0">Average passengers per metro: <strong>{{ avg_passengers_per_metro | round(2) }}</strong></h5>
+      </div>
+      {% else %}
+      <div class="no-data">No data available for average passengers per metro.</div>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- Second Query: Line Change Count -->
   <div class="analysis-section">
     <h2>Total Line Changes</h2>
@@ -219,16 +233,6 @@
     </div>
     {% endif %}
   </div>
-
-  <!-- Third Query: Average Passengers per Metro -->
-  {% if avg_passengers_per_metro is not none %}
-  <div class="analysis-section">
-    <h2>Average Passengers per Metro</h2>
-    <div class="result-box alert alert-success">
-      <h5 class="mb-0">Average passengers per metro: <strong>{{ avg_passengers_per_metro | round(2) }}</strong></h5>
-    </div>
-  </div>
-  {% endif %}
 
   <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>

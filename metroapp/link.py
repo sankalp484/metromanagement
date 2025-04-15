@@ -751,50 +751,68 @@ def view_tickets():
 @app.route('/analysis', methods=['GET', 'POST'])
 def analysis():
     selected_date = ''
-    station_traffic_results = []
     total_line_changes = None
-    avg_passengers_per_metro = None
 
+    # Get database connection
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Query 1: Station traffic (entry + exit) grouped by day of week (always run)
+    query1 = """
+    WITH station_traffic AS (
+        SELECT 
+            s.st_code,
+            s.st_name,
+            DAYOFWEEK(t.booking_date) AS day_of_week,
+            COUNT(*) AS passenger_count
+        FROM ticket t
+        JOIN station s ON t.entry_station = s.st_code
+        GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
+
+        UNION ALL
+
+        SELECT 
+            s.st_code,
+            s.st_name,
+            DAYOFWEEK(t.booking_date) AS day_of_week,
+            COUNT(*) AS passenger_count
+        FROM ticket t
+        JOIN station s ON t.exit_station = s.st_code
+        GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
+    )
+    SELECT 
+        st_code, 
+        st_name, 
+        day_of_week, 
+        SUM(passenger_count) AS total_passengers
+    FROM station_traffic
+    GROUP BY st_code, st_name, day_of_week
+    ORDER BY total_passengers DESC;
+    """
+    cursor.execute(query1)
+    station_traffic_results = cursor.fetchall()
+
+    # Query 3: Average passengers per metro (always run)
+    query3 = """
+    SELECT 
+        COALESCE(AVG(passenger_count), 0) AS avg_passengers_per_metro
+    FROM (
+        SELECT 
+            ms.metro_id, 
+            COUNT(p.passenger_id) AS passenger_count
+        FROM metro_schedule ms
+        LEFT JOIN ticket t ON ms.st_code = t.entry_station
+        LEFT JOIN passenger p ON t.pnr = p.pnr
+        GROUP BY ms.metro_id
+    ) metro_passenger_counts;
+    """
+    cursor.execute(query3)
+    result = cursor.fetchone()
+    avg_passengers_per_metro = result['avg_passengers_per_metro']
+
+    # Handle POST request for Query 2
     if request.method == 'POST':
         selected_date = request.form.get('line_change_date', '')
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        # Query 1: Station traffic (entry + exit) grouped by day of week
-        query1 = """
-        WITH station_traffic AS (
-            SELECT 
-                s.st_code,
-                s.st_name,
-                DAYOFWEEK(t.booking_date) AS day_of_week,
-                COUNT(*) AS passenger_count
-            FROM ticket t
-            JOIN station s ON t.entry_station = s.st_code
-            GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
-
-            UNION ALL
-
-            SELECT 
-                s.st_code,
-                s.st_name,
-                DAYOFWEEK(t.booking_date) AS day_of_week,
-                COUNT(*) AS passenger_count
-            FROM ticket t
-            JOIN station s ON t.exit_station = s.st_code
-            GROUP BY s.st_code, s.st_name, DAYOFWEEK(t.booking_date)
-        )
-        SELECT 
-            st_code, 
-            st_name, 
-            day_of_week, 
-            SUM(passenger_count) AS total_passengers
-        FROM station_traffic
-        GROUP BY st_code, st_name, day_of_week
-        ORDER BY total_passengers DESC;
-        """
-        cursor.execute(query1)
-        station_traffic_results = cursor.fetchall()
 
         # Query 2: Total line changes on selected date
         query2 = """
@@ -813,26 +831,8 @@ def analysis():
         result = cursor.fetchone()
         total_line_changes = result['total_line_changes'] or 0
 
-        # Query 3: Average passengers per metro
-        query3 = """
-        SELECT 
-            COALESCE(AVG(passenger_count), 0) AS avg_passengers_per_metro
-        FROM (
-            SELECT 
-                ms.metro_id, 
-                COUNT(p.passenger_id) AS passenger_count
-            FROM metro_schedule ms
-            LEFT JOIN ticket t ON ms.st_code = t.entry_station
-            LEFT JOIN passenger p ON t.pnr = p.pnr
-            GROUP BY ms.metro_id
-        ) metro_passenger_counts;
-        """
-        cursor.execute(query3)
-        result = cursor.fetchone()
-        avg_passengers_per_metro = result['avg_passengers_per_metro']
-
-        cursor.close()
-        conn.close()
+    cursor.close()
+    conn.close()
 
     return render_template("analysis.html",
                            selected_date=selected_date,
